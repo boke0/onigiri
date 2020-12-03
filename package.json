@@ -1,12 +1,13 @@
 {
-  "name": "webcomponent",
+  "name": "onigiri",
   "version": "1.0.0",
-  "description": "",
+  "description": "View component library using WebComponents.",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "webpack",
-    "watch": "webpack -w"
+    "watch": "webpack -w",
+    "serve": "webpack serve"
   },
   "author": "",
   "license": "ISC",
@@ -14,6 +15,7 @@
     "ts-loader": "^8.0.11",
     "typescript": "^4.1.2",
     "webpack": "^5.9.0",
-    "webpack-cli": "^4.2.0"
+    "webpack-cli": "^4.2.0",
+    "webpack-dev-server": "^3.11.0"
   }
 }

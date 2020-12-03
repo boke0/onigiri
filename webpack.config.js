@@ -1,10 +1,13 @@
 module.exports = [
   {
-    mode: 'development',
+    mode: 'production',
     entry: './src/index.ts',
     output: {
       path: `${__dirname}/dist`,
-      filename: './index.js'
+      filename: './onigiri.js',
+      library: 'Onigiri',
+      libraryTarget: 'umd',
+      globalObject: 'this'
     },
     module: {
       rules: [
@@ -20,22 +23,19 @@ module.exports = [
   },
   {
     mode: 'development',
-    entry: './src/examples/main.ts',
+    entry: './examples/src/main.js',
     output: {
       path: `${__dirname}/examples`,
-      filename: './main.js'
-    },
-    module: {
-      rules: [
-        {
-          test: /\.ts$/,
-          use: 'ts-loader'
-        }
-      ]
+      filename: './main.js',
     },
     resolve: {
-      extensions: ['.ts', '.js']
+      extensions: ['.js']
+    },
+    devServer: {
+      contentBase: `${__dirname}/examples`,
+      compress: true,
+      port: 9000
     }
   }
-]
+];
 

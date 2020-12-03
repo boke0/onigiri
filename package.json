@@ -1,5 +1,5 @@
 {
-  "name": "onigiri",
+  "name": "onigiri-js",
   "version": "1.0.0",
   "description": "View component library using WebComponents.",
   "main": "dist/main.js",

@@ -1,27 +1,41 @@
-class DummyElement extends HTMLElement {
-    dummyId: number;
-    constructor() {
-        super();
-        if(this.hasAttribute('data-id')){
-            this.dummyId = Number(this.dataset.id);
-        }
-    }
-}
-
-customElements.define('dummy-elem', DummyElement);
-
 export type State = Object;
 
 export abstract class Component extends HTMLElement {
     state: State;
     template: Template;
     shadowRoot: ShadowRoot;
-    constructor(){
+    get styles(): CSSStyleSheet[] {
+        return []
+    }
+    constructor() {
         super();
-        this.state = this.init();
-        const {temp, args} = this.render(this.state);
-        this.template = temp();
         this.attachShadow({mode: 'open'});
+        //@ts-ignore
+        this.shadowRoot.adoptedStyleSheets = this.styles;
+    }
+    proxy(){
+        return new Proxy(this, {
+            set(target, prop, value) {
+                if(prop in target){
+                    target[prop] = value;
+                    return true;
+                }else if(target.state.hasOwnProperty(prop)){
+                    target.state[prop] = value;
+                    target._update(target.state);
+                    return true;
+                }
+                return false;
+            }
+        });
+    }
+    connectedCallback(){
+        this.state = this.init();
+        try{
+            const {temp, args} = this.render(this.state);
+            this.template = temp();
+        }catch(e){
+            console.error('Component.render() must return result of html()');
+        }
         this.shadowRoot.appendChild(this.template.fragment);
         this._update(this.state);
     }
@@ -29,7 +43,9 @@ export abstract class Component extends HTMLElement {
         this.state = this[action](this.state, args);
         this._update(this.state);
     }
-    abstract init(...arg: any[]): State;
+    init(...arg: any[]): State {
+        return {};
+    };
     _update(state: State) {
         const {args} = this.render(state);
         this.template.update(...args);
@@ -37,6 +53,9 @@ export abstract class Component extends HTMLElement {
     abstract render(state: State): TemplateArgSet;
 }
 
+function isComponent(value: unknown): value is Component {
+    return typeof (value as Component).proxy === 'function';
+}
 
 interface NodeType {
     kind: 'text';
@@ -61,6 +80,11 @@ interface TemplateType {
     node: TemplateRange;
 }
 
+interface TemplateArrayType {
+    kind: 'tempArr';
+    node: TemplateRange[];
+}
+
 type Placeholder = NodeType | AttrType | TemplateType;
 
 interface TemplateArgSet {
@@ -75,9 +99,19 @@ function isTemplateArgSet(v: unknown): v is TemplateArgSet {
         && typeof (v as TemplateArgSet).fullstring === 'string';
 }
 
+function isTemplateArgSetArray(v: unknown): v is TemplateArgSet[] {
+    return Array.isArray(v)
+        && v.some(v_ => isTemplateArgSet(v_));
+}
+
 interface TemplateSlot {
     kind: 'temp',
     value: TemplateArgSet
+}
+
+interface TemplateArraySlot {
+    kind: 'tempArr',
+    value: TemplateArgSet[]
 }
 
 interface PrimitiveSlot {
@@ -121,7 +155,7 @@ export class Template{
                     attr: attr
                 });
             }else if (i != strings.length - 1){
-                html += ('<dummy-elem data-id="'+i+'"></dummy-elem>');
+                html += ('<span data-id="'+i+'"></span>');
                 this.placeholder.push({
                     kind: 'text',
                     node: null,
@@ -140,7 +174,7 @@ export class Template{
                     break;
                 case "text":
                     const dummy_elem = tmp.content.querySelector('[data-id="'+i+'"]');
-                    const t = document.createTextNode('hhhhh');
+                    const t = document.createTextNode('');
                     dummy_elem.parentNode.replaceChild(t, dummy_elem);
                     p.node = t;
                     break;
@@ -151,7 +185,13 @@ export class Template{
     update(...values: unknown[]){
         const values_: ArgSet[] = [];
         for(let i = 0; i<values.length; i++) {
-            if(isTemplateArgSet(values[i])) {
+            if(isTemplateArgSetArray(values[i])){
+                const temp: TemplateArraySlot = {
+                    kind: 'tempArr',
+                    value: values[i] as TemplateArgSet[]
+                };
+                values_.push(temp);
+            }else if(isTemplateArgSet(values[i])) {
                 const temp: TemplateSlot = {
                     kind: 'temp',
                     value: values[i] as TemplateArgSet
@@ -275,6 +315,3 @@ export function html(strings: TemplateStringsArray, ...values: unknown[]): Templ
         args: values
     };
 }
-
-
-

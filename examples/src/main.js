@@ -17,9 +17,24 @@ class TestComponent extends Component {
     return html`
       <div id=${state.attr} @click=${e => this.dispatch('update')}>
         ${state.content}
+        <test-test-component></test-test-component>
+        <input type='text' .value=${state.content} />
       </div>
     `;
   }
 }
 
+class TestTestComponent extends Component {
+  init(){
+    return {
+      value: this.value
+    }
+  }
+  render(state) {
+    return html`
+    `;
+  }
+}
+
 customElements.define('test-component', TestComponent);
+customElements.define('test-test-component', TestTestComponent);
